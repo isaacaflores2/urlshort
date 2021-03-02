@@ -2,10 +2,22 @@ package urlshort
 
 import (
 	"fmt"
+
 	"net/http"
 
 	"gopkg.in/yaml.v2"
+
+	"encoding/json"
 )
+
+type Redirects struct {
+	Redirects []redirectYaml `json:"redirects"`
+}
+
+type redirectYaml struct {
+	Path string `json:"path"`
+	Url  string `json:"url"`
+}
 
 // MapHandler will return an http.HandlerFunc (which also
 // implements http.Handler) that will attempt to map any
@@ -53,7 +65,7 @@ func YAMLHandler(yml []byte, fallback http.Handler) (http.HandlerFunc, error) {
 		return nil, err
 	}
 
-	yamlMap, err := convertYamlToMap(parsedYaml)
+	yamlMap, err := convertToMap(parsedYaml)
 	if err != nil {
 		fmt.Println("Could not convert Yaml to map")
 		return nil, err
@@ -71,24 +83,38 @@ func parseYaml(yml []byte) ([]redirectYaml, error) {
 	return rYaml, err
 }
 
-func convertYamlToMap(yml []redirectYaml) (map[string]string, error) {
+func convertToMap(redirects []redirectYaml) (map[string]string, error) {
 	redirectMap := make(map[string]string)
-	for _, v := range yml {
+	for _, v := range redirects {
 		redirectMap[v.Path] = v.Url
 	}
 	return redirectMap, nil
 }
 
-func JSONHandler( fallback http.Handler) (http.HandlerFunc, error){
-	//parseJson to an object
-	
-	//convert object to map
+func JSONHandler(jsonBytes []byte, fallback http.Handler) (http.HandlerFunc, error) {
+	parsedJson, err := parseJson(jsonBytes)
 
-	//pass to MapHandler
-	return nil, nil
+	if err != nil {
+		return nil, err
+	}
+
+	redirectMap, err := convertToMap(parsedJson)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Passing jsonMap to MapHandler")
+	handler := MapHandler(redirectMap, fallback)
+	return handler, nil
 }
 
-type redirectYaml struct {
-	Path string
-	Url  string
+func parseJson(jsonBytes []byte) ([]redirectYaml, error) {
+	var redirects Redirects
+	err := json.Unmarshal(jsonBytes, &redirects)
+	if err != nil {
+		fmt.Println("Error parsing json")
+		return nil, err
+	}
+
+	return redirects.Redirects, nil
 }

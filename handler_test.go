@@ -12,21 +12,35 @@ var yamlFile = `
   url: urlb
 `
 
-// var jsonFile = '
-// '
+var jsonFile = `{
+	"redirects" : [
+		{
+			"path" : "/a",
+			"url" : "urla"
+		},
+		{
+			"path" : "/b",
+			"url" : "urlb"
+		}
+	]	
+}`
 
-func TestConvertYaml(t *testing.T) {
+func TestConvertToMap(t *testing.T) {
 	parsedYaml, _ := parseYaml([]byte(yamlFile))
+	parsedJson, _ := parseJson([]byte(jsonFile))
 
-	t.Run(yamlFile, testConvertYamlToMapCount(parsedYaml))
-	t.Run(yamlFile, testConvertYamlToMap(parsedYaml))
+	t.Run(yamlFile, testConvertToMapCount(parsedYaml))
+	t.Run(yamlFile, testConvertToMap(parsedYaml))
+
+	t.Run(jsonFile, testConvertToMapCount(parsedJson))
+	t.Run(jsonFile, testConvertToMap(parsedJson))
 }
 
-func testConvertYamlToMapCount(parsedYaml []redirectYaml) func(t *testing.T) {
+func testConvertToMapCount(parsedYaml []redirectYaml) func(t *testing.T) {
 	return func(t *testing.T) {
 		expectedLen := 2
 
-		resultMap, _ := convertYamlToMap(parsedYaml)
+		resultMap, _ := convertToMap(parsedYaml)
 
 		if len(resultMap) != expectedLen {
 			t.Error(fmt.Sprintf("Expected result map: %v to have a length of %d ", resultMap, expectedLen))
@@ -34,18 +48,14 @@ func testConvertYamlToMapCount(parsedYaml []redirectYaml) func(t *testing.T) {
 	}
 }
 
-func testConvertYamlToMap(parsedYaml []redirectYaml) func(t *testing.T) {
+func testConvertToMap(parsedYaml []redirectYaml) func(t *testing.T) {
 	return func(t *testing.T) {
 		expectedValue := "urlb"
 
-		resultMap, _ := convertYamlToMap(parsedYaml)
+		resultMap, _ := convertToMap(parsedYaml)
 
 		if resultMap["/b"] != expectedValue {
 			t.Error(fmt.Sprintf("Expected result map: %v to have a key: %v with a  value of %v ", resultMap, "/b", expectedValue))
 		}
 	}
 }
-
-// func TestConvertJSON(t *testing.T) {
-
-// }
